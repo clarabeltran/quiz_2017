@@ -187,3 +187,86 @@ exports.check = function (req, res, next) {
         answer: answer
     });
 };
+
+/**
+ * Shuffles the given array by the FisherYates algorythm and
+ * returnts it.
+ * Source: https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+ */
+function shuffle(array) {
+  var currentIndex = array.length, temporaryValue, randomIndex;
+
+  // While there remain elements to shuffle...
+  while (0 !== currentIndex) {
+
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    // And swap it with the current element.
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
+}
+
+exports.randomplay = function (req, res ,next) {
+    var promisedQuiz = null; // Esto sera una promesa que se resuelve a la siguiente pregunta a mostrar
+    if (req.session.score === undefined || req.session.score === 0)  {
+        // Hemos perdido O acabamos de empezar
+        promisedQuiz = models.Quiz.findAll()
+        .then(function (quizzes) {
+            shuffle(quizzes)
+            var quizzesIds = quizzes.map(function(quiz) {
+                return quiz.id;
+            })
+            req.session.shuffledQuestionIds = quizzesIds;
+            req.session.gameQuestionIndex = 0;
+            req.session.score = 0;
+            var firstQuestion = quizzes[req.session.gameQuestionIndex];
+            return firstQuestion;
+        })
+    } else if (++req.session.gameQuestionIndex < req.session.shuffledQuestionIds.length) {
+        var newQuestionId = req.session.shuffledQuestionIds[req.session.gameQuestionIndex];
+        promisedQuiz = models.Quiz.findById(newQuestionId)
+    } else { // Nos hemos pasado EL JUEGO :)
+        var score = req.session.score;
+        req.session.score = undefined;
+        res.render('quizzes/random_nomore',{
+            score: score,
+        })
+        return;
+    }
+
+    promisedQuiz
+    .then(function (question) {
+        res.render('quizzes/random_play',{
+            quiz: question,
+            score: req.session.score,
+        })
+    })
+    .catch(function (error) {
+        next(error);
+    })
+
+}
+
+exports.randomcheck = function (req, res, next){
+    var answer = req.query.answer || "";
+    var isCorrect = answer.toLowerCase().trim() === req.quiz.answer.toLowerCase().trim();
+    var score = req.session.score
+    if (!isCorrect) {
+        req.session.score = 0;
+    } else {
+        req.session.score++;
+        score++;
+    }
+
+    res.render('quizzes/random_result',{
+        score: score,
+        answer: answer,
+        result: isCorrect,
+    })
+}
