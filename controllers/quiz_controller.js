@@ -5,10 +5,15 @@ var paginate = require('../helpers/paginate').paginate;
 
 // Autoload el quiz asociado a :quizId
 exports.load = function (req, res, next, quizId) {
+    models.Tip.findAll({model: models.User, as: 'Author'})
+
 
     models.Quiz.findById(quizId, {
         include: [
-            models.Tip,
+            {
+                model: models.Tip,
+                include: [ { model: models.User, as: 'Author' } ]
+            },
             {model: models.User, as: 'Author'}
         ]
     })
@@ -101,7 +106,6 @@ exports.index = function (req, res, next) {
 
 // GET /quizzes/:quizId
 exports.show = function (req, res, next) {
-
     res.render('quizzes/show', {quiz: req.quiz});
 };
 

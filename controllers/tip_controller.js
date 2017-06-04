@@ -40,7 +40,8 @@ exports.create = function (req, res, next) {
     var tip = models.Tip.build(
         {
             text: req.body.text,
-            QuizId: req.quiz.id
+            QuizId: req.quiz.id,
+            AuthorId: req.session.user.id,
         });
 
     tip.save()
@@ -96,3 +97,17 @@ exports.destroy = function (req, res, next) {
         next(error);
     });
 };
+
+exports.adminOrQuizAuthorOrTipAuthor = function(req, res, next) {
+    var isAdmin  = req.session.user.isAdmin;
+    var isQuizAuthor = req.quiz.AuthorId === req.session.user.id;
+    var isTipAuthor = req.tip.AuthorId === req.session.user.id;
+
+
+    if (isAdmin || isQuizAuthor || isTipAuthor ) {
+        next();
+    } else {
+        console.log('Operación prohibida: El usuario logeado no es el autor del quiz, ni el autor de la pista, ni un administrador.');
+        res.send(403);
+    }
+}
