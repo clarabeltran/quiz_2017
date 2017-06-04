@@ -3,39 +3,39 @@
 <ul>
     <% for (var i in tips) { %>
         <% var tip = tips[i]; %>
-
-        <li>
-
-            <% if (tip.accepted || (
-                    session.user && (
-                        session.user.isAdmin || 
-                        (quizAuthorId && quizAuthorId === session.user.id) ||
-                        (tip.Author && tip.Author.id === session.user.id)
-                    )
+        <% var showTipText = tip.accepted || (
+                session.user && (
+                    session.user.isAdmin || 
+                    (quizAuthorId && quizAuthorId === session.user.id) ||
+                    (tip.Author && tip.Author.id === session.user.id)
                 )
-            ) { %>
+            )
+        %>
+        <% var showAccept = !tip.accepted &&
+                    (session.user && (session.user.isAdmin || (quizAuthorId && quizAuthorId === session.user.id)))
+        %>
+        <% var showDelete = session.user && (
+                    session.user.isAdmin ||
+                    (quizAuthorId && quizAuthorId === session.user.id) ||
+                    (tip.Author && tip.Author.id === session.user.id)
+                )
+        %>
 
-                <p><%= tip.text %></p>
-                <span id="autor"><%= tip.Author ? tip.Author.username : "Anómino" %></span>
-            <% } %>
+        <% if (showTipText) { %>
+        <li>
+            <p><%= tip.text %></p>
+            <span id="autor"><%= tip.Author ? tip.Author.username : "Anómino" %></span>
 
-            <% if (!tip.accepted &&
-                    (session.user && (session.user.isAdmin || (quizAuthorId && quizAuthorId === session.user.id)))) { %>
-
+            <% if (showAccept) { %>
                 <a href="/quizzes/<%= quizId %>/tips/<%= tip.id %>/accept?_method=PUT"><button>Aceptar</button></a>
 
             <% } %>
 
-            <% if (session.user && (
-                    session.user.isAdmin ||
-                    (quizAuthorId && quizAuthorId === session.user.id) ||
-                    (tip.Author && tip.Author.id === session.user.id)
-                )) { %>
-
+            <% if (showDelete) { %>
                 <a href="/quizzes/<%= quizId %>/tips/<%= tip.id %>?_method=DELETE"><button>Borrar</button></a>
-
             <% } %>
 
         </li>
+        <% } %>
     <% } %>
 </ul>
